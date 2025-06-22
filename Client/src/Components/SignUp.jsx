@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -8,17 +8,16 @@ const SignUp = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    pass: "",
+    password: "",
     confirmPass: "",
   });
-
   const [focus, setFocus] = useState({
     name: false,
     email: false,
     pass: false,
     confirmPass: false,
   });
-
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -34,7 +33,7 @@ const SignUp = () => {
     { label: "Email", name: "email", type: "email" },
     {
       label: "Password",
-      name: "pass",
+      name: "password",
       type: showPassword ? "text" : "password",
       showToggle: true,
       toggleState: showPassword,
@@ -62,32 +61,36 @@ const SignUp = () => {
         if (value.trim() === "") return "Name is required";
         if (value.trim().length < 3) return "Minimum 3 characters required";
         if (value.trim().length > 25) return "Maximum 25 characters allowed";
-        if (!/^[A-Za-z ]+$/.test(value)) return "Only letters and spaces allowed";
+        if (!/^[A-Za-z ]+$/.test(value))
+          return "Only letters and spaces allowed";
         if ((value.match(/ /g) || []).length > 2) return "Too many spaces";
         if (cleaned !== capitalized) return "Each word must be capitalized";
         break;
 
       case "email":
         if (value.trim() === "") return "Email is required";
-        if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(value.trim())) return "Invalid email format";
+        if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(value.trim()))
+          return "Invalid email format";
         if ((value.match(/@/g) || []).length !== 1) return "Only one @ allowed";
         if (/\s/.test(value)) return "No spaces allowed";
         if (/[@.]{2,}/.test(value)) return "Invalid special character usage";
         break;
 
-      case "pass":
+      case "password":
         if (value.trim() === "") return "Password is required";
         if (value.length < 8) return "Minimum 8 characters required";
-        if (!/[A-Z]/.test(value)) return "At least one uppercase letter required";
-        if (!/[a-z]/.test(value)) return "At least one lowercase letter required";
+        if (!/[A-Z]/.test(value))
+          return "At least one uppercase letter required";
+        if (!/[a-z]/.test(value))
+          return "At least one lowercase letter required";
         if (!/[0-9]/.test(value)) return "At least one number required";
-        if (!/[!@#$%^&*]/.test(value)) return "At least one special character required";
+        if (!/[!@#$%^&*]/.test(value))
+          return "At least one special character required";
         if (/\s/.test(value)) return "No spaces allowed";
         break;
-
       case "confirmPass":
         if (value.trim() === "") return "Confirm Password is required";
-        if (value !== formData.pass) return "Passwords do not match";
+        if (value !== formData.password) return "Passwords do not match";
         break;
 
       default:
@@ -134,21 +137,30 @@ const SignUp = () => {
     border: "1px solid #D1D5DB",
   };
 
-  const handleSubmit = async(e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if(!formData.confirmPass || !formData.email || !formData.name || !formData.pass){
+    if (
+      !formData.confirmPass ||
+      !formData.email ||
+      !formData.name ||
+      !formData.password
+    ) {
       toast.error("All Fields are Required");
-      return
+      return;
     }
-    console.log("Submit Clicked")
-    try{
-      const res = await axios.post("http://localhost:5000/api/auth/signup", formData)
-      console.log(res.data)
+    console.log("Submit Clicked");
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/api/auth/signup",
+        formData
+      );
+      console.log(res.data);
+      toast.success(res.data.msg);
+      navigate("/login");
+    } catch (err) {
+      console.log(err);
     }
-    catch(err){
-      console.log(err)
-    }
-  }
+  };
 
   return (
     <div
@@ -174,9 +186,7 @@ const SignUp = () => {
 
         {fields.map((field) => (
           <div key={field.name} style={inputWrapper}>
-            <label
-              style={labelStyle(focus[field.name], formData[field.name])}
-            >
+            <label style={labelStyle(focus[field.name], formData[field.name])}>
               {field.label}
             </label>
             <input
@@ -193,10 +203,10 @@ const SignUp = () => {
             />
             {field.showToggle && (
               <i
-                className={`bi ${field.toggleState ? "bi-eye-slash" : "bi-eye"}`}
-                onClick={() =>
-                  field.setToggleState(!field.toggleState)
-                }
+                className={`bi ${
+                  field.toggleState ? "bi-eye-slash" : "bi-eye"
+                }`}
+                onClick={() => field.setToggleState(!field.toggleState)}
                 style={{
                   position: "absolute",
                   right: "12px",
@@ -208,7 +218,6 @@ const SignUp = () => {
                 }}
               ></i>
             )}
-            
           </div>
         ))}
 

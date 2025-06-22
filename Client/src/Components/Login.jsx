@@ -1,15 +1,16 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 const Login = () => {
   const [emailFocus, setEmailFocus] = useState(false);
   const [email, setEmail] = useState("");
   const [passFocus, setPassFocus] = useState(false);
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-
+  const navigate = useNavigate();
   const labelStyle = (focused, filled) => ({
     position: "absolute",
     top: focused || filled ? "-8px" : "10px",
@@ -35,44 +36,63 @@ const Login = () => {
   };
 
   const handleToggle = () => {
-    setShowPassword(!showPassword)
-  }
+    setShowPassword(!showPassword);
+  };
 
   const validateRules = (name, value) => {
-      switch(name) {
-        case "email":
-          if (value.trim() === "") return "Email is required";
-        if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(value.trim())) return "Invalid email format";
+    switch (name) {
+      case "email":
+        if (value.trim() === "") return "Email is required";
+        if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(value.trim()))
+          return "Invalid email format";
         if ((value.match(/@/g) || []).length !== 1) return "Only one @ allowed";
         if (/\s/.test(value)) return "No spaces allowed";
         if (/[@.]{2,}/.test(value)) return "Invalid special character usage";
         break;
 
-        case "pass": 
+      case "pass":
         if (value.trim() === "") return "Password is required";
         if (value.length < 8) return "Minimum 8 characters required";
-        if (!/[A-Z]/.test(value)) return "At least one uppercase letter required";
-        if (!/[a-z]/.test(value)) return "At least one lowercase letter required";
+        if (!/[A-Z]/.test(value))
+          return "At least one uppercase letter required";
+        if (!/[a-z]/.test(value))
+          return "At least one lowercase letter required";
         if (!/[0-9]/.test(value)) return "At least one number required";
-        if (!/[!@#$%^&*]/.test(value)) return "At least one special character required";
+        if (!/[!@#$%^&*]/.test(value))
+          return "At least one special character required";
         if (/\s/.test(value)) return "No spaces allowed";
         break;
 
-        default:
-          break;
-      }
+      default:
+        break;
+    }
 
-      return null;
-  }
+    return null;
+  };
 
   const handleBlur = (e) => {
-    const {name, value} = e.target;
+    const { name, value } = e.target;
     const err = validateRules(name, value);
-    setError((prev) => ({...prev, [name]: err}))
+    setError((prev) => ({ ...prev, [name]: err }));
 
     if (err) toast.error(err);
-  }
-
+  };
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post("http://localhost:5000/api/auth/login", {
+        email,
+        password,
+      });
+      console.log(res.data.msg);
+      toast.success(res.data.msg);
+      localStorage.setItem("token", res.data.token);
+      navigate("/home");
+    } catch (err) {
+      console.log(err);
+      toast.error(err.response?.data?.msg || "Login failed");
+    }
+  };
   return (
     <div
       className="d-flex align-items-center justify-content-center"
@@ -124,26 +144,30 @@ const Login = () => {
             onBlur={handleBlur}
             style={inputStyle}
           />
-          <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`} style={{
-          position: "absolute",
-          right: "12px",
-          top: "50%",
-          transform: "translateY(-50%)",
-          cursor: "pointer",
-          color: "#9CA3AF",
-          fontSize: "18px",
-        }}
-        onClick={handleToggle}>
-
-          </i>
+          <i
+            className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}
+            style={{
+              position: "absolute",
+              right: "12px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              cursor: "pointer",
+              color: "#9CA3AF",
+              fontSize: "18px",
+            }}
+            onClick={handleToggle}
+          ></i>
         </div>
 
         <div className="d-flex mb-3 text-end justify-content-between">
-          <Link to="/signup" style={{
+          <Link
+            to="/signup"
+            style={{
               fontSize: "13px",
               color: "#3B82F6",
               textDecoration: "none",
-            }}>
+            }}
+          >
             Create Account?
           </Link>
           <Link
@@ -160,6 +184,7 @@ const Login = () => {
 
         <div className="d-grid">
           <button
+            onClick={handleLogin}
             className="btn"
             style={{
               backgroundColor: "#6366F1",
