@@ -1,0 +1,28 @@
+/* index.css */
+
+:root {
+  --bg-color: #ffffff;
+  --text-color: #0f172a;
+  --card-bg: #f9fafb;
+  --button-blue: #2563eb;
+  --button-green: #16a34a;
+  --border-color: #e5e7eb;
+  --input-bg: #ffffff;
+  --input-border: #d1d5db;
+  --shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+  --accent: #6366f1;
+  --font-main: 'Inter', sans-serif;
+}
+
+[data-theme="dark"] {
+  --bg-color: #0f172a;
+  --text-color: #ffffff;
+  --card-bg: #1e293b;
+  --button-blue: #3b82f6;
+  --button-green: #22c55e;
+  --border-color: #334155;
+  --input-bg: #1e293b;
+  --input-border: #475569;
+  --shadow: 0px 4px 12px rgba(255, 255, 255, 0.05);
+  --accent: #818cf8;
+}

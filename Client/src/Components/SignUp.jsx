@@ -1,40 +1,34 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    pass: "",
+    password: "",
     confirmPass: "",
   });
 
   const [focus, setFocus] = useState({
     name: false,
     email: false,
-    pass: false,
+    password: false,
     confirmPass: false,
   });
 
+  const [error, setError] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const [error, setError] = useState({
-    name: "",
-    email: "",
-    pass: "",
-    confirmPass: "",
-  });
+  const navigate = useNavigate();
 
   const fields = [
     { label: "Full Name", name: "name", type: "text" },
     { label: "Email", name: "email", type: "email" },
     {
       label: "Password",
-      name: "pass",
+      name: "password",
       type: showPassword ? "text" : "password",
       showToggle: true,
       toggleState: showPassword,
@@ -59,55 +53,102 @@ const SignUp = () => {
 
     switch (name) {
       case "name":
-        if (value.trim() === "") return "Name is required";
-        if (value.trim().length < 3) return "Minimum 3 characters required";
-        if (value.trim().length > 25) return "Maximum 25 characters allowed";
-        if (!/^[A-Za-z ]+$/.test(value)) return "Only letters and spaces allowed";
+        if (!value) return "Name is required";
+        if (value.length < 2) return "Minimum 3 characters required";
+        if (value.length > 25) return "Maximum 25 characters allowed";
+        if (!/^[A-Za-z][A-Za-z ]*$/.test(value))
+          return "Only letters and spaces allowed";
         if ((value.match(/ /g) || []).length > 2) return "Too many spaces";
         if (cleaned !== capitalized) return "Each word must be capitalized";
         break;
 
       case "email":
-        if (value.trim() === "") return "Email is required";
-        if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(value.trim())) return "Invalid email format";
+        if (!value) return "Email is required";
+        if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value))
+          return "Invalid email format";
         if ((value.match(/@/g) || []).length !== 1) return "Only one @ allowed";
         if (/\s/.test(value)) return "No spaces allowed";
         if (/[@.]{2,}/.test(value)) return "Invalid special character usage";
         break;
 
-      case "pass":
-        if (value.trim() === "") return "Password is required";
+      case "password":
+        if (!value) return "Password is required";
         if (value.length < 8) return "Minimum 8 characters required";
-        if (!/[A-Z]/.test(value)) return "At least one uppercase letter required";
-        if (!/[a-z]/.test(value)) return "At least one lowercase letter required";
+        if (!/[A-Z]/.test(value))
+          return "At least one uppercase letter required";
+        if (!/[a-z]/.test(value))
+          return "At least one lowercase letter required";
         if (!/[0-9]/.test(value)) return "At least one number required";
-        if (!/[!@#$%^&*]/.test(value)) return "At least one special character required";
+        if (!/[!@#$%^&*]/.test(value))
+          return "At least one special character required";
         if (/\s/.test(value)) return "No spaces allowed";
         break;
 
       case "confirmPass":
-        if (value.trim() === "") return "Confirm Password is required";
-        if (value !== formData.pass) return "Passwords do not match";
+        if (!value) return "Confirm Password is required";
+        if (value !== formData.password) return "Passwords do not match";
         break;
 
       default:
         break;
     }
 
-    return null;
+    return "";
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value = "" } = e.target;
+
+    let updatedValue = value;
+
+    if (name === "name") {
+      updatedValue = updatedValue.replace(/[^a-zA-Z ]/g, "");
+      updatedValue = updatedValue
+        .split(" ")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ");
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: updatedValue }));
+    const err = validateRules(name, updatedValue);
+    setError((prev) => ({ ...prev, [name]: err }));
   };
 
-  const handleBlur = (e) => {
-    const { name, value } = e.target;
-    const err = validateRules(name, value);
-    setError((prev) => ({ ...prev, [name]: err }));
+  const handleFocus = (name) => {
+    setFocus((prev) => ({ ...prev, [name]: true }));
+  };
 
-    if (err) toast.error(err);
+  const isFormValid = () => {
+    return (
+      Object.values(formData).every((val) => val.trim() !== "") &&
+      Object.values(error).every((err) => err === "")
+    );
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const validationErrors = {};
+
+    Object.keys(formData).forEach((key) => {
+      const err = validateRules(key, formData[key]);
+      if (err) validationErrors[key] = err;
+    });
+
+    setError(validationErrors);
+
+    if (Object.keys(validationErrors).length > 0) return;
+
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/api/auth/signup",
+        formData
+      );
+      toast.success("User Registered Successfully");
+      navigate("/login");
+    } catch (err) {
+      const errorMessage = err.response?.data?.msg || "Signup failed";
+      toast.error(errorMessage);
+    }
   };
 
   const labelStyle = (focused, filled) => ({
@@ -115,135 +156,159 @@ const SignUp = () => {
     top: focused || filled ? "-8px" : "10px",
     left: "12px",
     fontSize: focused || filled ? "12px" : "14px",
-    color: focused ? "#6366F1" : "#6B7280",
-    backgroundColor: "#FFFFFF",
+    color: focused ? "var(--accent)" : "#6B7280",
+    backgroundColor: "var(--card-bg)",
     padding: "0 4px",
     transition: "0.2s ease",
   });
-
-  const inputWrapper = {
-    position: "relative",
-    marginBottom: "20px",
-  };
 
   const inputStyle = {
     width: "100%",
     padding: "12px",
     borderRadius: "8px",
     fontSize: "14px",
-    border: "1px solid #D1D5DB",
+    border: "1px solid var(--input-border)",
+    backgroundColor: "var(--input-bg)",
+    color: "var(--text-color)",
   };
-
-  const handleSubmit = async(e) => {
-    e.preventDefault();
-    if(!formData.confirmPass || !formData.email || !formData.name || !formData.pass){
-      toast.error("All Fields are Required");
-      return
-    }
-    console.log("Submit Clicked")
-    try{
-      const res = await axios.post("http://localhost:5000/api/auth/signup", formData)
-      console.log(res.data)
-    }
-    catch(err){
-      console.log(err)
-    }
-  }
 
   return (
     <div
       className="d-flex align-items-center justify-content-center"
-      style={{ height: "100vh", backgroundColor: "#F9FAFB" }}
+      style={{ height: "100vh", backgroundColor: "var(--bg-color)" }}
     >
       <div
         style={{
-          backgroundColor: "#FFFFFF",
+          backgroundColor: "var(--card-bg)",
           padding: "30px",
-          border: "1px solid #E5E7EB",
+          border: "1px solid var(--border-color)",
           borderRadius: "12px",
           width: "350px",
-          boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.05)",
+          boxShadow: "var(--shadow)",
         }}
       >
         <div className="text-center mb-4">
-          <h3 style={{ fontWeight: "600", color: "#111827" }}>Sign Up</h3>
+          <h3 style={{ fontWeight: "600", color: "var(--text-color)" }}>
+            Sign Up
+          </h3>
           <p style={{ color: "#6B7280", fontSize: "14px" }}>
             Create your CodeSphere account
           </p>
         </div>
 
-        {fields.map((field) => (
-          <div key={field.name} style={inputWrapper}>
-            <label
-              style={labelStyle(focus[field.name], formData[field.name])}
+        <form onSubmit={handleSubmit}>
+          {fields.map((field) => (
+            <>
+
+            <div style={{marginBottom: "20px"}}>
+            <div
+              key={field.name}
+              style={{ position: "relative" }}
             >
-              {field.label}
-            </label>
-            <input
-              type={field.type}
-              className="form-control"
-              name={field.name}
-              value={formData[field.name]}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              onFocus={() =>
-                setFocus((prev) => ({ ...prev, [field.name]: true }))
-              }
-              style={inputStyle}
-            />
-            {field.showToggle && (
-              <i
-                className={`bi ${field.toggleState ? "bi-eye-slash" : "bi-eye"}`}
-                onClick={() =>
-                  field.setToggleState(!field.toggleState)
-                }
-                style={{
-                  position: "absolute",
-                  right: "12px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  cursor: "pointer",
-                  color: "#9CA3AF",
-                  fontSize: "18px",
+              <label
+                style={labelStyle(focus[field.name], formData[field.name])}
+              >
+                {field.label}
+              </label>
+              <input
+                type={field.type}
+                className="form-control"
+                name={field.name}
+                value={formData[field.name]}
+                onChange={handleChange}
+                onFocus={() => handleFocus(field.name)}
+                style={inputStyle}
+                onKeyDown={(e) => {
+                  if (
+                    ["email", "password", "confirmPass"].includes(field.name)
+                  ) {
+                    if (e.key === " ") e.preventDefault();
+                  } else if (field.name === "name") {
+                    if (e.key === " " && e.target.selectionStart === 0) {
+                      e.preventDefault();
+                    }
+                  }
                 }}
-              ></i>
-            )}
-            
+                onPaste={(e) => {
+                  const pasted = e.clipboardData.getData("text");
+
+                  if (
+                    ["email", "password", "confirmPass"].includes(field.name)
+                  ) {
+                    if (pasted.includes(" ")) e.preventDefault();
+                  } else if (field.name === "name") {
+                    if (pasted.startsWith(" ")) e.preventDefault();
+                  }
+                }}
+              />
+              {field.showToggle && (
+                <i
+                  className={`bi ${
+                    field.toggleState ? "bi-eye-slash" : "bi-eye"
+                  }`}
+                  onClick={() => field.setToggleState(!field.toggleState)}
+                  style={{
+                    position: "absolute",
+                    top: "50%",
+                    right: "10px",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "16px",
+                    color: "#666",
+                  }}
+                ></i>
+              )}
+            </div>
+              <div>
+              {error[field.name] && (
+                <span style={{ color: "red", fontSize: "12px", marginTop: "2px"}}>
+                  {error[field.name]}
+                </span>
+                
+              )}
+              </div>
+              </div>
+
+              </>
+          ))}
+
+          <div className="mb-3 text-end">
+            <Link
+              to="/login"
+              style={{
+                fontSize: "13px",
+                color: "var(--button-blue)",
+                textDecoration: "none",
+              }}
+            >
+              Already have an account?
+            </Link>
           </div>
-        ))}
 
-        <div className="mb-3 text-end">
-          <Link
-            to="/login"
-            style={{
-              fontSize: "13px",
-              color: "#3B82F6",
-              textDecoration: "none",
-            }}
-          >
-            Already have an account?
-          </Link>
-        </div>
-
-        <div className="d-grid">
-          <button
-            onClick={handleSubmit}
-            type="submit"
-            className="btn"
-            style={{
-              backgroundColor: "#6366F1",
-              color: "white",
-              borderRadius: "8px",
-              padding: "10px",
-              fontWeight: "500",
-              fontSize: "15px",
-              border: "none",
-              transition: "0.3s ease",
-            }}
-          >
-            Sign Up
-          </button>
-        </div>
+          <div className="d-grid">
+            <button
+              type="submit"
+              disabled={!isFormValid()}
+              className="btn"
+              style={{
+                backgroundColor: "var(--accent)",
+                color: "white",
+                borderRadius: "8px",
+                padding: "10px",
+                fontWeight: "500",
+                fontSize: "15px",
+                border: "none",
+                transition: "0.3s ease",
+                opacity: isFormValid() ? 1 : 0.5,
+                cursor: isFormValid() ? "pointer" : "not-allowed",
+              }}
+            >
+              Sign Up
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

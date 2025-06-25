@@ -3,7 +3,7 @@ import React from 'react';
 
 const HomePage = () => {
   return (
-    giii
+    <h1>Hii kaushal</h1>
   );
 };
 
