@@ -56,8 +56,7 @@ const SignUp = () => {
         if (!value) return "Name is required";
         if (value.length < 2) return "Minimum 3 characters required";
         if (value.length > 25) return "Maximum 25 characters allowed";
-        if (!/^[A-Za-z][A-Za-z ]*$/.test(value))
-          return "Only letters and spaces allowed";
+        if (!/^[A-Za-z][A-Za-z ]*$/.test(value)) return "Only letters and spaces allowed";
         if ((value.match(/ /g) || []).length > 2) return "Too many spaces";
         if (cleaned !== capitalized) return "Each word must be capitalized";
         break;
@@ -74,13 +73,10 @@ const SignUp = () => {
       case "password":
         if (!value) return "Password is required";
         if (value.length < 8) return "Minimum 8 characters required";
-        if (!/[A-Z]/.test(value))
-          return "At least one uppercase letter required";
-        if (!/[a-z]/.test(value))
-          return "At least one lowercase letter required";
+        if (!/[A-Z]/.test(value)) return "At least one uppercase letter required";
+        if (!/[a-z]/.test(value)) return "At least one lowercase letter required";
         if (!/[0-9]/.test(value)) return "At least one number required";
-        if (!/[!@#$%^&*]/.test(value))
-          return "At least one special character required";
+        if (!/[!@#$%^&*]/.test(value)) return "At least one special character required";
         if (/\s/.test(value)) return "No spaces allowed";
         break;
 
@@ -96,9 +92,12 @@ const SignUp = () => {
     return "";
   };
 
+  const handleBlur = (name) => {
+  setFocus((prev) => ({ ...prev, [name]: false }));
+};
+
   const handleChange = (e) => {
     const { name, value = "" } = e.target;
-
     let updatedValue = value;
 
     if (name === "name") {
@@ -135,14 +134,10 @@ const SignUp = () => {
     });
 
     setError(validationErrors);
-
     if (Object.keys(validationErrors).length > 0) return;
 
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/auth/signup",
-        formData
-      );
+      const res = await axios.post("http://localhost:5000/api/auth/signup", formData);
       toast.success("User Registered Successfully");
       navigate("/login");
     } catch (err) {
@@ -153,133 +148,142 @@ const SignUp = () => {
 
   const labelStyle = (focused, filled) => ({
     position: "absolute",
-    top: focused || filled ? "-8px" : "10px",
+    top: focused || filled ? "-10px" : "13px",
     left: "12px",
     fontSize: focused || filled ? "12px" : "14px",
-    color: focused ? "var(--accent)" : "#6B7280",
-    backgroundColor: "var(--card-bg)",
+    color: focused ? "var(--accent)" : "var(--text-muted)",
+    backgroundColor: "var(--input-bg)",
     padding: "0 4px",
+    pointerEvents: "none",
     transition: "0.2s ease",
+    zIndex: 2,
   });
 
   const inputStyle = {
     width: "100%",
     padding: "12px",
+    paddingRight: "36px",
     borderRadius: "8px",
     fontSize: "14px",
     border: "1px solid var(--input-border)",
     backgroundColor: "var(--input-bg)",
     color: "var(--text-color)",
+    outline: "none",
   };
 
   return (
     <div
-      className="d-flex align-items-center justify-content-center"
-      style={{ height: "100vh", backgroundColor: "var(--bg-color)" }}
+      style={{
+        height: "100vh",
+        width: "100vw",
+        overflow: "hidden",
+        backgroundImage: "url('/bg.jpeg')", // ✅ image path
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+      }}
     >
+      {/* Glass Overlay */}
       <div
         style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          height: "100%",
+          width: "100%",
+          backgroundColor: "var(--glass-overlay)",
+          backdropFilter: "var(--glass-blur)",
+          WebkitBackdropFilter: "var(--glass-blur)",
+          zIndex: 1,
+        }}
+      />
+
+      <div
+        style={{
+          zIndex: 2,
           backgroundColor: "var(--card-bg)",
           padding: "30px",
           border: "1px solid var(--border-color)",
-          borderRadius: "12px",
-          width: "350px",
+          borderRadius: "16px",
+          width: "380px",
           boxShadow: "var(--shadow)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
         }}
       >
-        <div className="text-center mb-4">
-          <h3 style={{ fontWeight: "600", color: "var(--text-color)" }}>
-            Sign Up
-          </h3>
-          <p style={{ color: "#6B7280", fontSize: "14px" }}>
+        <div style={{ textAlign: "center", marginBottom: "16px" }}>
+          <h3 style={{ fontWeight: "700", color: "var(--text-color)" }}>Sign Up</h3>
+          <p style={{ color: "var(--text-muted)", fontSize: "13px" }}>
             Create your CodeSphere account
           </p>
         </div>
 
         <form onSubmit={handleSubmit}>
           {fields.map((field) => (
-            <>
-
-            <div style={{marginBottom: "20px"}}>
-            <div
-              key={field.name}
-              style={{ position: "relative" }}
-            >
-              <label
-                style={labelStyle(focus[field.name], formData[field.name])}
-              >
+            <div key={field.name} style={{ marginBottom: "20px", position: "relative" }}>
+              <label style={labelStyle(focus[field.name], formData[field.name])}>
                 {field.label}
               </label>
               <input
                 type={field.type}
-                className="form-control"
                 name={field.name}
+                className="form-control"
                 value={formData[field.name]}
                 onChange={handleChange}
                 onFocus={() => handleFocus(field.name)}
+                onBlur={() => handleBlur(field.name)}
                 style={inputStyle}
                 onKeyDown={(e) => {
-                  if (
-                    ["email", "password", "confirmPass"].includes(field.name)
-                  ) {
+                  if (["email", "password", "confirmPass"].includes(field.name)) {
                     if (e.key === " ") e.preventDefault();
                   } else if (field.name === "name") {
-                    if (e.key === " " && e.target.selectionStart === 0) {
-                      e.preventDefault();
-                    }
+                    if (e.key === " " && e.target.selectionStart === 0) e.preventDefault();
                   }
                 }}
                 onPaste={(e) => {
                   const pasted = e.clipboardData.getData("text");
-
                   if (
-                    ["email", "password", "confirmPass"].includes(field.name)
+                    ["email", "password", "confirmPass"].includes(field.name) &&
+                    pasted.includes(" ")
                   ) {
-                    if (pasted.includes(" ")) e.preventDefault();
-                  } else if (field.name === "name") {
-                    if (pasted.startsWith(" ")) e.preventDefault();
+                    e.preventDefault();
+                  } else if (field.name === "name" && pasted.startsWith(" ")) {
+                    e.preventDefault();
                   }
                 }}
               />
               {field.showToggle && (
                 <i
-                  className={`bi ${
-                    field.toggleState ? "bi-eye-slash" : "bi-eye"
-                  }`}
+                  className={`bi ${field.toggleState ? "bi-eye-slash" : "bi-eye"}`}
                   onClick={() => field.setToggleState(!field.toggleState)}
                   style={{
                     position: "absolute",
                     top: "50%",
                     right: "10px",
                     transform: "translateY(-50%)",
-                    background: "none",
-                    border: "none",
                     cursor: "pointer",
-                    fontSize: "16px",
-                    color: "#666",
+                    color: "var(--text-muted)",
                   }}
                 ></i>
               )}
-            </div>
-              <div>
               {error[field.name] && (
-                <span style={{ color: "red", fontSize: "12px", marginTop: "2px"}}>
+                <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
                   {error[field.name]}
-                </span>
-                
+                </p>
               )}
-              </div>
-              </div>
-
-              </>
+            </div>
           ))}
 
-          <div className="mb-3 text-end">
+          <div style={{ textAlign: "right", marginBottom: "16px" }}>
             <Link
               to="/login"
               style={{
                 fontSize: "13px",
-                color: "var(--button-blue)",
+                color: "var(--accent)",
                 textDecoration: "none",
               }}
             >
@@ -287,27 +291,25 @@ const SignUp = () => {
             </Link>
           </div>
 
-          <div className="d-grid">
-            <button
-              type="submit"
-              disabled={!isFormValid()}
-              className="btn"
-              style={{
-                backgroundColor: "var(--accent)",
-                color: "white",
-                borderRadius: "8px",
-                padding: "10px",
-                fontWeight: "500",
-                fontSize: "15px",
-                border: "none",
-                transition: "0.3s ease",
-                opacity: isFormValid() ? 1 : 0.5,
-                cursor: isFormValid() ? "pointer" : "not-allowed",
-              }}
-            >
-              Sign Up
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={!isFormValid()}
+            style={{
+              backgroundColor: "var(--accent)",
+              color: "white",
+              borderRadius: "8px",
+              padding: "10px",
+              width: "100%",
+              fontWeight: "600",
+              fontSize: "15px",
+              border: "none",
+              transition: "0.3s ease",
+              opacity: isFormValid() ? 1 : 0.5,
+              cursor: isFormValid() ? "pointer" : "not-allowed",
+            }}
+          >
+            Sign Up
+          </button>
         </form>
       </div>
     </div>

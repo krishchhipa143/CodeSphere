@@ -4,7 +4,8 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto")
 const nodemailer = require("nodemailer");
 require("dotenv").config();
-
+const helpRequests = require("../Models/helpRequestsSchema")
+const mongoose = require("mongoose")
 
 exports.signup = async (req, res) => {
   try {
@@ -57,7 +58,7 @@ exports.forgotPassword = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(404).send({ message: "User not Found" });  // ✅ Fix
+      return res.status(404).send({ message: "User not Found" });
     }
 
     const token = crypto.randomBytes(32).toString("hex");
@@ -66,13 +67,13 @@ exports.forgotPassword = async (req, res) => {
     user.resetTokenExpiry = Date.now() + 3600000;
     await user.save();
 
-    const resetLink = `http://localhost:3000/reset-password/${token}`;
+    const resetLink = `http://localhost:5173/reset-password/${token}`;
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: "codesphereteam@gmail.com",
-        pass: "ulne lbwc mqtp qgke",
+        user: "codephereteam@gmail.com",
+        pass: "ulnelbwcmqtpqgke",
       },
     });
 
@@ -85,7 +86,7 @@ exports.forgotPassword = async (req, res) => {
 });
 
     await transporter.sendMail({
-      from: "codesphereteam@gmail.com",
+      from: "codephereteam@gmail.com",
       to: user.email,
       subject: "Reset Your Password",
       html: `
@@ -96,7 +97,7 @@ exports.forgotPassword = async (req, res) => {
 
     res.send({ message: "Your reset link has been sent to your email" });
   } catch (err) {
-    console.error("Forgot Password Error:", err);  // ✅ Debugging help
+    console.error("Forgot Password Error:", err);
     res.status(500).send({ message: "Server Error" });
   }
 };
@@ -105,12 +106,16 @@ exports.resetPassword = async (req, res) => {
     const {password} = req.body;
     const token = req.params.token;
 
+   console.log("Reset Password Request Received");
+  console.log("Token from URL:", token);
+  console.log("New Password:", password);
+
     try {const user = await User.findOne({
       resetToken: token,
       resetTokenExpiry: { $gt: Date.now() },
     })
 
-    if(!user) {res.status(400).json({message: "Invalid or Expired Token"})}
+    if(!user) {return res.status(400).json({message: "Invalid or Expired Token"})}
 
     const hashed = await bcrypt.hash(password, 10);
     user.password = hashed;
@@ -118,10 +123,42 @@ exports.resetPassword = async (req, res) => {
     user.resetTokenExpiry = undefined;
 
     await user.save();
+    console.log("Password updated successfully");
 
     res.json({message: "Password reset Succesfully"})
   } catch (err) {
-    console.error(err)
+      console.error("Server Error in resetPassword:", err.message);
     res.status(500).json({message: "Server Error"})
   }
-}
+};
+
+exports.createHelpRequests = async (req, res) => {
+  
+
+  try{
+    const { topic, details } = req.body;
+
+    console.log("Incoming request body:", topic, details);
+    console.log("User from token:", req.user);
+    const newReq = new helpRequests({
+      topic,
+      details,
+      createdBy: new mongoose.Types.ObjectId(req.user.userId),
+    });
+    await newReq.save();
+    res.status(201).json({ msg: "Request created", request: newReq });
+  } catch (err) {
+    console.error("Create Help Request Error:", err);
+    res.status(500).json({ msg: "Server error" });
+  }
+  };
+
+  exports.getAllHelpRequests = async (req, res) => {
+  try {
+    const requests = await helpRequests.find().populate("createdBy", "name email");
+    res.json(requests);
+  } catch (err) {
+    res.status(500).json({ msg: "Server error" });
+  }
+};
+

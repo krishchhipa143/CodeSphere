@@ -1,28 +1,73 @@
-/* index.css */
+
 
 :root {
-  --bg-color: #ffffff;
+  --bg-color: #f0f4f8; /* Light bluish-gray background instead of plain white */
   --text-color: #0f172a;
-  --card-bg: #f9fafb;
-  --button-blue: #2563eb;
+  --card-bg: rgba(255, 255, 255, 0.75); /* Slight transparent white */
+  --button-blue: #3b82f6;
   --button-green: #16a34a;
-  --border-color: #e5e7eb;
-  --input-bg: #ffffff;
-  --input-border: #d1d5db;
-  --shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
-  --accent: #6366f1;
+  --border-color: #d1d5db;
+  --input-bg: rgba(255, 255, 255, 0.6); /* Glassy input */
+  --input-border: #cbd5e1;
+  --shadow: 0px 4px 16px rgba(0, 0, 0, 0.08); /* Softer but deeper shadow */
+  --accent: #6366f1; /* Soft purple-blue for buttons and highlights */
+  --glass-overlay: rgba(255, 255, 255, 0.5); /* For glass overlay */
+  --glass-blur: blur(12px);
   --font-main: 'Inter', sans-serif;
+  --text-muted: rgba(15, 23, 42, 0.6); /* Muted text color */
 }
+
 
 [data-theme="dark"] {
   --bg-color: #0f172a;
   --text-color: #ffffff;
-  --card-bg: #1e293b;
+  --card-bg: rgba(30, 41, 59, 0.7); /* glassy dark */
   --button-blue: #3b82f6;
   --button-green: #22c55e;
   --border-color: #334155;
-  --input-bg: #1e293b;
+  --input-bg: rgba(15, 23, 42, 0.6); /* semi-transparent input */
   --input-border: #475569;
-  --shadow: 0px 4px 12px rgba(255, 255, 255, 0.05);
+  --shadow: 0px 4px 16px rgba(0, 0, 0, 0.4);
   --accent: #818cf8;
+  --glass-overlay: rgba(15, 23, 42, 0.6);
+  --glass-blur: blur(12px);
+  --text-muted: rgba(255, 255, 255, 0.7);
 }
+
+
+body, html, #root {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  user-select: none;
+}
+
+
+#root > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.vs-main-content {
+  flex: 1 1 auto;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.vs-bottom-bar {
+  flex-shrink: 0;
+  height: 28px;
+  min-height: 28px;
+  max-height: 28px;
+  width: 100vw;
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+  background: var(--bg-color);
+  border-top: 1px solid var(--border-color);
+}
+
+
